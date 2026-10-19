@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gut Log</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<meta name="theme-color" content="#2F6F62">
+<style>
+:root{--paper:#F1F3EE;--card:#fff;--ink:#1E2A28;--mute:#66736F;--line:#D5DBD3;--moss:#2F6F62;--alert:#A63D40;
+--meal:#2F6F62;--bowel:#7A5C3E;--symptom:#A63D40;--exercise:#3C6E9C;--sleep:#5B5A8F;--day:#66736F}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.4 system-ui,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+main{max-width:520px;margin:0 auto;padding:14px}
+h1{font-size:1.3rem;margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.link{background:none;border:0;color:var(--mute);padding:6px;text-decoration:underline}
+.date{display:flex;align-items:center;justify-content:space-between;margin:8px 0 14px}
+.date button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:1.2rem}
+.date b{font-size:1.05rem}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+.grid button{min-height:64px;border:0;border-radius:10px;color:#fff;font-weight:600}
+.tl{border-left:2px solid var(--line);margin-left:6px;padding-left:14px}
+.it{position:relative;background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--line)}
+.it::before{content:"";position:absolute;left:-22px;top:16px;width:10px;height:10px;border-radius:50%;background:var(--c)}
+.it small{color:var(--mute)}
+.it .x{position:absolute;right:6px;top:4px;border:0;background:none;color:var(--mute);font-size:1.1rem;padding:6px}
+.empty{color:var(--mute);padding:8px 0}
+#sheet{position:fixed;inset:0;background:rgba(20,30,28,.45);display:flex;align-items:flex-end;z-index:5}
+#sheet[hidden]{display:none}
+.panel{background:var(--paper);width:100%;max-width:520px;margin:0 auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
+label{display:block;margin:12px 0 4px;font-weight:600}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],input[type=datetime-local],textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
+input[type=range]{width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:#fff;border-radius:18px;padding:8px 12px}
+.chips button.on{background:var(--c,var(--moss));border-color:var(--c,var(--moss));color:#fff}
+.row{display:flex;gap:8px;margin-top:16px}
+.row button{flex:1;padding:13px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:600}
+.row .go{background:var(--moss);border-color:var(--moss);color:#fff}
+.err{color:var(--alert);margin-top:8px}
+:focus-visible{outline:3px solid #7FB5A8;outline-offset:2px}
+</style></head>
+<body>
+<main id="app"></main>
+<div id="sheet" hidden></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+// ====== 1. Paste your project's values (Supabase > Project Settings > API) ======
+const SUPABASE_URL = 'https://nunwpmufloighrcxcuis.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_eXzDT2KNyRdLMLF8kdjjHA_Ft37Whar';
+// =================================================================================
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ymd = d => d.toLocaleDateString('en-CA');
+const nowLocal = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+const tm = v => new Date(v).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
+let user = null, day = ymd(new Date());
+
+// ---- Form definitions: each kind maps to a table and a list of fields ----
+const range = (a, b) => Array.from({length: b - a + 1}, (_, i) => [a + i, String(a + i)]);
+const K = {
+  meal: {t: 'Meal', table: 'meals', f: [
+    {k:'logged_at', l:'When', t:'dt'},
+    {k:'description', l:'What did you eat?', t:'text', req:1, fav:1},
+    {k:'photo', l:'Photo (plate or recipe)', t:'file'},
+    {k:'notes', l:'Notes', t:'area'}]},
+  bowel: {t: 'Bowel', table: 'bowel_movements', f: [
+    {k:'logged_at', l:'When', t:'dt'},
+    {k:'bristol', l:'Bristol type', t:'chips', req:1, o:[[1,'1 Hard lumps'],[2,'2 Lumpy'],[3,'3 Cracked'],[4,'4 Smooth'],[5,'5 Soft blobs'],[6,'6 Mushy'],[7,'7 Watery']]},
+    {k:'urgency', l:'Urgency (0 none, 3 severe)', t:'chips', def:0, o:range(0,3)},
+    {k:'incomplete', l:'Felt incomplete', t:'check'},
+    {k:'notes', l:'Notes', t:'area'}]},
+  symptom: {t: 'Symptom', table: 'symptoms', f: [
+    {k:'logged_at', l:'When', t:'dt'},
+    {k:'type', l:'Type', t:'chips', s:1, req:1, o:['pain','bloating','gas','nausea','other'].map(x => [x, x])},
+    {k:'severity', l:'Severity', t:'range', min:0, max:10, def:3},
+    {k:'notes', l:'Notes', t:'area'}]},
+  sleep: {t: 'Sleep', table: 'sleep', up: 'user_id,sleep_date', f: [
+    {k:'sleep_date', l:'Night ending on', t:'date', req:1},
+    {k:'bedtime', l:'Bedtime', t:'dt'},
+    {k:'wake_time', l:'Woke up', t:'dt'},
+    {k:'quality', l:'Quality (1 poor, 5 great)', t:'chips', o:range(1,5)}]},
+  exercise: {t: 'Exercise', table: 'exercise', f: [
+    {k:'logged_at', l:'When', t:'dt'},
+    {k:'type', l:'What?', t:'text', req:1},
+    {k:'duration_min', l:'Minutes', t:'num'},
+    {k:'intensity', l:'Intensity (1 easy, 3 hard)', t:'chips', o:range(1,3)}]},
+  day: {t: 'Day', table: 'daily_context', up: 'user_id,log_date', f: [
+    {k:'log_date', l:'Date', t:'date', req:1},
+    {k:'stress', l:'Stress', t:'range', min:0, max:10, def:3},
+    {k:'alcohol', l:'Alcohol today', t:'check'},
+    {k:'caffeine_count', l:'Caffeinated drinks', t:'num'},
+    {k:'notes', l:'Notes', t:'area'}]}
+};
+const COLORS = {meal:'--meal', bowel:'--bowel', symptom:'--symptom', exercise:'--exercise', sleep:'--sleep', day:'--day'};
+
+function field(f) {
+  const n = `name="${f.k}"`;
+  const wrap = h => `<label>${f.l}</label>${h}`;
+  if (f.t === 'dt') return wrap(`<input type="datetime-local" ${n} value="${nowLocal()}">`);
+  if (f.t === 'date') return wrap(`<input type="date" ${n} value="${day}">`);
+  if (f.t === 'text') return wrap(`<input type="text" ${n} autocomplete="off">${f.fav ? '<div class="chips" id="favs" style="margin-top:6px"></div>' : ''}`);
+  if (f.t === 'area') return wrap(`<textarea ${n} rows="2"></textarea>`);
+  if (f.t === 'num') return wrap(`<input type="number" inputmode="numeric" min="0" ${n}>`);
+  if (f.t === 'file') return wrap(`<input type="file" accept="image/*" ${n}>`);
+  if (f.t === 'check') return `<label><input type="checkbox" ${n}> ${f.l}</label>`;
+  if (f.t === 'range') return wrap(`<input type="range" min="${f.min}" max="${f.max}" value="${f.def}" ${n} oninput="this.nextElementSibling.textContent=this.value"><b>${f.def}</b>`);
+  if (f.t === 'chips') return wrap(`<div class="chips" data-k="${f.k}">${f.o.map(([v, l]) => `<button type="button" data-v="${v}" class="${v === f.def ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`);
+}
+
+function openForm(kind) {
+  const c = K[kind];
+  $('#sheet').hidden = false;
+  $('#sheet').innerHTML = `<form class="panel" style="--c:var(${COLORS[kind]})"><h1>${c.t}</h1>${c.f.map(field).join('')}
+    <div class="err" id="err"></div>
+    <div class="row"><button type="button" id="cancel">Cancel</button><button class="go" id="save">Save ${c.t.toLowerCase()}</button></div></form>`;
+  const form = $('#sheet form');
+  form.addEventListener('click', e => {
+    const b = e.target.closest('.chips button');
+    if (!b || b.parentElement.id === 'favs') return;
+    b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  });
+  $('#cancel').onclick = closeSheet;
+  form.onsubmit = e => { e.preventDefault(); save(kind, form); };
+  if (kind === 'meal') loadFavs(form);
+}
+const closeSheet = () => { $('#sheet').hidden = true; $('#sheet').innerHTML = ''; };
+
+async function loadFavs(form) {
+  const {data} = await sb.from('meals').select('description').order('logged_at', {ascending: false}).limit(80);
+  const counts = {};
+  (data || []).forEach(r => counts[r.description] = (counts[r.description] || 0) + 1);
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(x => x[0]);
+  $('#favs').innerHTML = top.map(t => `<button type="button" data-t="${esc(t)}">${esc(t)}</button>`).join('');
+  $('#favs').onclick = e => { const b = e.target.closest('button'); if (b) form.description.value = b.dataset.t; };
+}
+
+async function save(kind, form) {
+  const c = K[kind], row = {user_id: user.id}, err = $('#err');
+  let file = null;
+  for (const f of c.f) {
+    const el = form.elements[f.k] || form.querySelector(`[data-k="${f.k}"]`);
+    let v = null;
+    if (f.t === 'file') { file = el.files[0]; continue; }
+    if (f.t === 'dt') v = el.value ? new Date(el.value).toISOString() : null;
+    else if (f.t === 'chips') { const b = el.querySelector('.on'); v = b ? (f.s ? b.dataset.v : Number(b.dataset.v)) : null; }
+    else if (f.t === 'check') v = el.checked;
+    else if (f.t === 'range' || f.t === 'num') v = el.value === '' ? null : Number(el.value);
+    else v = el.value.trim() || null;
+    if (f.req && v === null) { err.textContent = `${f.l.replace(/\?$/, '')} is required.`; return; }
+    if (v !== null) row[f.k] = v;
+  }
+  $('#save').disabled = true;
+  if (file) {
+    const path = `${user.id}/${crypto.randomUUID()}.jpg`;
+    const up = await sb.storage.from('meal-photos').upload(path, file, {contentType: file.type});
+    if (up.error) { err.textContent = 'Photo upload failed: ' + up.error.message; $('#save').disabled = false; return; }
+    row.photo_path = path;
+  }
+  const q = c.up ? sb.from(c.table).upsert(row, {onConflict: c.up}) : sb.from(c.table).insert(row);
+  const {error} = await q;
+  if (error) { err.textContent = 'Could not save: ' + error.message; $('#save').disabled = false; return; }
+  closeSheet();
+  if (kind === 'sleep' || kind === 'day') day = row.sleep_date || row.log_date;
+  else if (row.logged_at) day = ymd(new Date(row.logged_at));
+  render();
+}
+
+// ---- Summaries (shared by timeline and CSV export) ----
+function summary(kind, r) {
+  if (kind === 'meal') return {title: r.description, detail: [r.notes, r.photo_path && 'photo attached'].filter(Boolean).join(' · ')};
+  if (kind === 'bowel') return {title: `Bristol ${r.bristol}`, detail: [`urgency ${r.urgency}`, r.incomplete && 'incomplete', r.notes].filter(Boolean).join(', ')};
+  if (kind === 'symptom') return {title: `${r.type} ${r.severity}/10`, detail: r.notes || ''};
+  if (kind === 'exercise') return {title: r.type, detail: `${r.duration_min ?? '?'} min, intensity ${r.intensity ?? '-'}`};
+  if (kind === 'sleep') {
+    const h = r.bedtime && r.wake_time ? ((new Date(r.wake_time) - new Date(r.bedtime)) / 36e5).toFixed(1) + ' h' : 'duration not set';
+    return {title: `Slept: ${h}`, detail: r.quality ? `quality ${r.quality}/5` : ''};
+  }
+  return {title: `Stress ${r.stress ?? '-'}/10`, detail: [r.alcohol && 'alcohol', r.caffeine_count && `${r.caffeine_count} caffeinated drinks`, r.notes].filter(Boolean).join(', ')};
+}
+const TABLE = {meal:'meals', bowel:'bowel_movements', symptom:'symptoms', exercise:'exercise', sleep:'sleep', day:'daily_context'};
+
+async function load() {
+  const d0 = new Date(day + 'T00:00'), d1 = new Date(d0); d1.setDate(d1.getDate() + 1);
+  const r = q => q.gte('logged_at', d0.toISOString()).lt('logged_at', d1.toISOString());
+  const [m, b, s, e, sl, dc] = await Promise.all([
+    r(sb.from('meals').select('*')), r(sb.from('bowel_movements').select('*')), r(sb.from('symptoms').select('*')), r(sb.from('exercise').select('*')),
+    sb.from('sleep').select('*').eq('sleep_date', day), sb.from('daily_context').select('*').eq('log_date', day)]);
+  const tag = (kind, res) => (res.data || []).map(x => ({kind, r: x}));
+  const timed = [...tag('meal', m), ...tag('bowel', b), ...tag('symptom', s), ...tag('exercise', e)].sort((a, z) => new Date(a.r.logged_at) - new Date(z.r.logged_at));
+  return [...tag('sleep', sl), ...tag('day', dc), ...timed];
+}
+
+const item = ({kind, r}) => {
+  const s = summary(kind, r), t = r.logged_at ? tm(r.logged_at) : '';
+  return `<div class="it" style="--c:var(${COLORS[kind]})"><button class="x" data-del="${kind}:${r.id}" aria-label="Delete">×</button>
+    <small>${t} ${t ? '· ' : ''}${K[kind].t.toLowerCase()}</small><div><b>${esc(s.title)}</b></div>${s.detail ? `<small>${esc(s.detail)}</small>` : ''}</div>`;
+};
+
+async function render() {
+  if (!user) return renderAuth();
+  const label = new Date(day + 'T00:00').toLocaleDateString([], {weekday: 'long', day: 'numeric', month: 'short'});
+  $('#app').innerHTML = `<div class="top"><h1>Gut Log</h1><span><button class="link" id="exp">Export</button><button class="link" id="out">Sign out</button></span></div>
+    <div class="grid">${Object.keys(K).map(k => `<button data-k="${k}" style="background:var(${COLORS[k]})">${K[k].t}</button>`).join('')}</div>
+    <div class="date"><button id="prev" aria-label="Previous day">‹</button><b>${label}</b><button id="next" aria-label="Next day">›</button></div>
+    <div class="tl" id="tl"><div class="empty">Loading…</div></div>`;
+  $('#tl').innerHTML = (await load()).map(item).join('') || '<div class="empty">Nothing logged yet. Tap a button above to add an entry.</div>';
+}
+
+document.addEventListener('click', async e => {
+  const t = e.target;
+  if (t.matches('.grid button')) openForm(t.dataset.k);
+  else if (t.id === 'prev' || t.id === 'next') { const d = new Date(day + 'T00:00'); d.setDate(d.getDate() + (t.id === 'next' ? 1 : -1)); day = ymd(d); render(); }
+  else if (t.id === 'out') sb.auth.signOut();
+  else if (t.id === 'exp') exportCsv();
+  else if (t.dataset.del) {
+    const [kind, id] = t.dataset.del.split(':');
+    if (confirm('Delete this entry?')) { await sb.from(TABLE[kind]).delete().eq('id', id); render(); }
+  }
+});
+
+async function exportCsv() {
+  const rows = [['kind', 'time', 'summary', 'detail']];
+  for (const kind of Object.keys(TABLE)) {
+    const {data} = await sb.from(TABLE[kind]).select('*').limit(5000);
+    (data || []).forEach(r => { const s = summary(kind, r); rows.push([kind, r.logged_at || r.sleep_date || r.log_date, s.title, s.detail]); });
+  }
+  rows.sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+  const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
+  a.download = `gut-log-${ymd(new Date())}.csv`; a.click();
+}
+
+function renderAuth() {
+  $('#app').innerHTML = `<h1>Gut Log</h1><form id="auth"><label>Email</label><input type="email" name="e" required autocomplete="email">
+    <label>Password</label><input type="password" name="p" required minlength="6" autocomplete="current-password">
+    <div class="err" id="aerr"></div><div class="row"><button class="go" data-m="in">Sign in</button><button data-m="up">Create account</button></div></form>`;
+  $('#auth').onsubmit = async e => {
+    e.preventDefault();
+    const mode = e.submitter?.dataset.m, f = e.target;
+    const {error} = mode === 'up' ? await sb.auth.signUp({email: f.e.value, password: f.p.value}) : await sb.auth.signInWithPassword({email: f.e.value, password: f.p.value});
+    if (error) $('#aerr').textContent = error.message;
+    else if (mode === 'up') $('#aerr').textContent = 'Account created. Check your email to confirm if required, then sign in.';
+  };
+}
+
+sb.auth.onAuthStateChange((_ev, session) => { user = session?.user ?? null; render(); });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body></html>
