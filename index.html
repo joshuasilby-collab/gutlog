@@ -7,40 +7,52 @@
 <link rel="icon" href="icon.svg">
 <meta name="theme-color" content="#2F6F62">
 <style>
-:root{--paper:#F1F3EE;--card:#fff;--ink:#1E2A28;--mute:#66736F;--line:#D5DBD3;--moss:#2F6F62;--alert:#A63D40;
---meal:#2F6F62;--bowel:#7A5C3E;--symptom:#A63D40;--exercise:#3C6E9C;--sleep:#5B5A8F;--day:#66736F}
-*{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.4 system-ui,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
-main{max-width:520px;margin:0 auto;padding:14px}
-h1{font-size:1.3rem;margin:0}
+:root{--bg:#F4F5F2;--card:#fff;--ink:#17211F;--mute:#6B7774;--line:#E2E6E0;--moss:#2F6F62;--danger:#B23B3E;
+--meal:#2F6F62;--bowel:#8A6240;--symptom:#B23B3E;--exercise:#2F6AA0;--sleep:#5E5CA6;--day:#5F6F6B;--r:16px}
+@media(prefers-color-scheme:dark){:root{--bg:#101615;--card:#1A2220;--ink:#E8EEEC;--mute:#92A09C;--line:#2A3532;--moss:#4FA593;--danger:#E0686B;
+--meal:#58B5A2;--bowel:#C79A70;--symptom:#E0686B;--exercise:#6FA8DC;--sleep:#9E9CE0;--day:#9AAAA6}
+.chips button.on,.row .go{color:#0B1412}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+main{max-width:520px;margin:0 auto;padding:18px 16px 40px}
+h1{font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin:0}
 button{font:inherit;color:inherit;cursor:pointer}
-.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.link{background:none;border:0;color:var(--mute);padding:6px;text-decoration:underline}
-.date{display:flex;align-items:center;justify-content:space-between;margin:8px 0 14px}
-.date button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:1.2rem}
-.date b{font-size:1.05rem}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
-.grid button{min-height:64px;border:0;border-radius:10px;color:#fff;font-weight:600}
-.tl{border-left:2px solid var(--line);margin-left:6px;padding-left:14px}
-.it{position:relative;background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--line)}
-.it::before{content:"";position:absolute;left:-22px;top:16px;width:10px;height:10px;border-radius:50%;background:var(--c)}
-.it small{color:var(--mute)}
-.it .x{position:absolute;right:6px;top:4px;border:0;background:none;color:var(--mute);font-size:1.1rem;padding:6px}
-.empty{color:var(--mute);padding:8px 0}
-#sheet{position:fixed;inset:0;background:rgba(20,30,28,.45);display:flex;align-items:flex-end;z-index:5}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.link{background:none;border:0;color:var(--mute);padding:8px;font-size:.9rem}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid button{height:72px;border:0;border-radius:var(--r);font-weight:600;background:color-mix(in srgb,var(--c) 13%,var(--card));color:var(--c);transition:transform .1s}
+.grid button:active{transform:scale(.96)}
+.date{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px;margin:18px 0}
+.date button{width:42px;height:42px;border-radius:50%;border:0;background:none;font-size:1.3rem;color:var(--mute)}
+.date button:active{background:var(--bg)}
+.date b{font-weight:600}
+.tl{display:flex;flex-direction:column;gap:8px}
+.it{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.it:active{transform:scale(.99)}
+.tag{flex:none;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border-radius:8px;padding:4px 8px;min-width:66px;text-align:center}
+.tt{flex:1;display:flex;flex-direction:column;min-width:0}
+.tt small{color:var(--mute)}
+.it time{color:var(--mute);font-size:.85rem;flex:none}
+.empty{color:var(--mute);text-align:center;padding:28px 0}
+#sheet{position:fixed;inset:0;background:rgba(10,18,16,.5);display:flex;align-items:flex-end;z-index:5;animation:fade .2s}
 #sheet[hidden]{display:none}
-.panel{background:var(--paper);width:100%;max-width:520px;margin:0 auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
-label{display:block;margin:12px 0 4px;font-weight:600}
-input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],input[type=datetime-local],textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
-input[type=range]{width:100%}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chips button{border:1px solid var(--line);background:#fff;border-radius:18px;padding:8px 12px}
+.panel{background:var(--bg);width:100%;max-width:520px;margin:0 auto;border-radius:24px 24px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;animation:up .25s ease-out}
+.panel::before{content:"";display:block;width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px}
+@keyframes up{from{transform:translateY(30px);opacity:0}}
+@keyframes fade{from{opacity:0}}
+label{display:block;margin:14px 0 6px;font-weight:600;font-size:.9rem;color:var(--mute)}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],input[type=datetime-local],textarea{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;font:inherit;background:var(--card);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--c,var(--moss))}
+input[type=checkbox]{accent-color:var(--c,var(--moss));width:20px;height:20px;vertical-align:-4px;margin-right:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 14px}
 .chips button.on{background:var(--c,var(--moss));border-color:var(--c,var(--moss));color:#fff}
-.row{display:flex;gap:8px;margin-top:16px}
-.row button{flex:1;padding:13px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:600}
-.row .go{background:var(--moss);border-color:var(--moss);color:#fff}
-.err{color:var(--alert);margin-top:8px}
-:focus-visible{outline:3px solid #7FB5A8;outline-offset:2px}
+.row{display:flex;gap:10px;margin-top:20px}
+.row button{flex:1;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--card);font-weight:600}
+.row .go{flex:2;background:var(--c,var(--moss));border-color:transparent;color:#fff}
+.row .danger{color:var(--danger)}
+.err{color:var(--danger);margin-top:10px}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--moss) 50%,transparent);outline-offset:2px}
 </style></head>
 <body>
 <main id="app"></main>
@@ -59,6 +71,7 @@ const ymd = d => d.toLocaleDateString('en-CA');
 const nowLocal = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
 const tm = v => new Date(v).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
 let user = null, day = ymd(new Date());
+const ROWS = {};
 
 // ---- Form definitions: each kind maps to a table and a list of fields ----
 const range = (a, b) => Array.from({length: b - a + 1}, (_, i) => [a + i, String(a + i)]);
@@ -112,12 +125,12 @@ function field(f) {
   if (f.t === 'chips') return wrap(`<div class="chips" data-k="${f.k}">${f.o.map(([v, l]) => `<button type="button" data-v="${v}" class="${v === f.def ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`);
 }
 
-function openForm(kind) {
-  const c = K[kind];
+function openForm(kind, row) {
+  const c = K[kind], editing = !!row;
   $('#sheet').hidden = false;
-  $('#sheet').innerHTML = `<form class="panel" style="--c:var(${COLORS[kind]})"><h1>${c.t}</h1>${c.f.map(field).join('')}
+  $('#sheet').innerHTML = `<form class="panel" style="--c:var(${COLORS[kind]})"><h1>${editing ? 'Edit' : 'Add'} ${c.t.toLowerCase()}</h1>${c.f.map(field).join('')}
     <div class="err" id="err"></div>
-    <div class="row"><button type="button" id="cancel">Cancel</button><button class="go" id="save">Save ${c.t.toLowerCase()}</button></div></form>`;
+    <div class="row"><button type="button" id="cancel">Cancel</button>${editing ? '<button type="button" id="del" class="danger">Delete</button>' : ''}<button class="go" id="save">${editing ? 'Save changes' : 'Save'}</button></div></form>`;
   const form = $('#sheet form');
   form.addEventListener('click', e => {
     const b = e.target.closest('.chips button');
@@ -125,10 +138,27 @@ function openForm(kind) {
     b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
   });
   $('#cancel').onclick = closeSheet;
-  form.onsubmit = e => { e.preventDefault(); save(kind, form); };
+  form.onsubmit = e => { e.preventDefault(); save(kind, form, row?.id); };
+  $('#sheet').onclick = e => { if (e.target.id === 'sheet') closeSheet(); };
   if (kind === 'meal') loadFavs(form);
+  if (editing) {
+    fill(form, c, row);
+    $('#del').onclick = async () => { if (confirm('Delete this entry?')) { await sb.from(c.table).delete().eq('id', row.id); closeSheet(); render(); } };
+  }
 }
 const closeSheet = () => { $('#sheet').hidden = true; $('#sheet').innerHTML = ''; };
+
+const loc = v => { const d = new Date(v); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+function fill(form, c, row) {
+  for (const f of c.f) {
+    const v = row[f.k]; if (v == null || f.t === 'file') continue;
+    const el = form.elements[f.k] || form.querySelector(`[data-k="${f.k}"]`);
+    if (f.t === 'dt') el.value = loc(v);
+    else if (f.t === 'check') el.checked = v;
+    else if (f.t === 'chips') el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v == v));
+    else { el.value = v; if (f.t === 'range') el.nextElementSibling.textContent = v; }
+  }
+}
 
 async function loadFavs(form) {
   const {data} = await sb.from('meals').select('description').order('logged_at', {ascending: false}).limit(80);
@@ -139,7 +169,7 @@ async function loadFavs(form) {
   $('#favs').onclick = e => { const b = e.target.closest('button'); if (b) form.description.value = b.dataset.t; };
 }
 
-async function save(kind, form) {
+async function save(kind, form, id) {
   const c = K[kind], row = {user_id: user.id}, err = $('#err');
   let file = null;
   for (const f of c.f) {
@@ -153,6 +183,7 @@ async function save(kind, form) {
     else v = el.value.trim() || null;
     if (f.req && v === null) { err.textContent = `${f.l.replace(/\?$/, '')} is required.`; return; }
     if (v !== null) row[f.k] = v;
+    else if (id && f.k !== 'caffeine_count') row[f.k] = null;
   }
   $('#save').disabled = true;
   if (file) {
@@ -161,7 +192,7 @@ async function save(kind, form) {
     if (up.error) { err.textContent = 'Photo upload failed: ' + up.error.message; $('#save').disabled = false; return; }
     row.photo_path = path;
   }
-  const q = c.up ? sb.from(c.table).upsert(row, {onConflict: c.up}) : sb.from(c.table).insert(row);
+  const q = id ? sb.from(c.table).update(row).eq('id', id) : c.up ? sb.from(c.table).upsert(row, {onConflict: c.up}) : sb.from(c.table).insert(row);
   const {error} = await q;
   if (error) { err.textContent = 'Could not save: ' + error.message; $('#save').disabled = false; return; }
   closeSheet();
@@ -196,16 +227,16 @@ async function load() {
 }
 
 const item = ({kind, r}) => {
+  ROWS[r.id] = {kind, r};
   const s = summary(kind, r), t = r.logged_at ? tm(r.logged_at) : '';
-  return `<div class="it" style="--c:var(${COLORS[kind]})"><button class="x" data-del="${kind}:${r.id}" aria-label="Delete">×</button>
-    <small>${t} ${t ? '· ' : ''}${K[kind].t.toLowerCase()}</small><div><b>${esc(s.title)}</b></div>${s.detail ? `<small>${esc(s.detail)}</small>` : ''}</div>`;
+  return `<button class="it" data-edit="${r.id}" style="--c:var(${COLORS[kind]})"><span class="tag">${K[kind].t}</span><span class="tt"><b>${esc(s.title)}</b>${s.detail ? `<small>${esc(s.detail)}</small>` : ''}</span><time>${t}</time></button>`;
 };
 
 async function render() {
   if (!user) return renderAuth();
   const label = new Date(day + 'T00:00').toLocaleDateString([], {weekday: 'long', day: 'numeric', month: 'short'});
   $('#app').innerHTML = `<div class="top"><h1>Gut Log</h1><span><button class="link" id="exp">Export</button><button class="link" id="out">Sign out</button></span></div>
-    <div class="grid">${Object.keys(K).map(k => `<button data-k="${k}" style="background:var(${COLORS[k]})">${K[k].t}</button>`).join('')}</div>
+    <div class="grid">${Object.keys(K).map(k => `<button data-k="${k}" style="--c:var(${COLORS[k]})">${K[k].t}</button>`).join('')}</div>
     <div class="date"><button id="prev" aria-label="Previous day">‹</button><b>${label}</b><button id="next" aria-label="Next day">›</button></div>
     <div class="tl" id="tl"><div class="empty">Loading…</div></div>`;
   $('#tl').innerHTML = (await load()).map(item).join('') || '<div class="empty">Nothing logged yet. Tap a button above to add an entry.</div>';
@@ -217,10 +248,7 @@ document.addEventListener('click', async e => {
   else if (t.id === 'prev' || t.id === 'next') { const d = new Date(day + 'T00:00'); d.setDate(d.getDate() + (t.id === 'next' ? 1 : -1)); day = ymd(d); render(); }
   else if (t.id === 'out') sb.auth.signOut();
   else if (t.id === 'exp') exportCsv();
-  else if (t.dataset.del) {
-    const [kind, id] = t.dataset.del.split(':');
-    if (confirm('Delete this entry?')) { await sb.from(TABLE[kind]).delete().eq('id', id); render(); }
-  }
+  else if (t.closest('[data-edit]')) { const x = ROWS[t.closest('[data-edit]').dataset.edit]; openForm(x.kind, x.r); }
 });
 
 async function exportCsv() {
