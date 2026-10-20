@@ -44,6 +44,14 @@ label{display:block;margin:14px 0 6px;font-weight:600;font-size:.9rem;color:var(
 input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],input[type=datetime-local],textarea{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;font:inherit;background:var(--card);color:var(--ink)}
 input[type=range]{width:100%;accent-color:var(--c,var(--moss))}
 input[type=checkbox]{accent-color:var(--c,var(--moss));width:20px;height:20px;vertical-align:-4px;margin-right:6px}
+.withbtn{display:flex;gap:8px}
+#sugg:not(:empty){margin-top:8px}
+#sugg button{border-style:dashed}
+#star{flex:none;width:52px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:1.4rem;color:var(--mute)}
+#star.on{color:var(--c)}
+#favs:empty::before{content:"Tap the star to save a go-to meal or drink";color:var(--mute);font-size:.9rem}
+#favs button span{opacity:.55;padding-left:4px}
+select{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;font:inherit;background:var(--card);color:var(--ink)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 14px}
 .chips button.on{background:var(--c,var(--moss));border-color:var(--c,var(--moss));color:#fff}
@@ -116,7 +124,9 @@ function field(f) {
   const wrap = h => `<label>${f.l}</label>${h}`;
   if (f.t === 'dt') return wrap(`<input type="datetime-local" ${n} value="${nowLocal()}">`);
   if (f.t === 'date') return wrap(`<input type="date" ${n} value="${day}">`);
-  if (f.t === 'text') return wrap(`<input type="text" ${n} autocomplete="off">${f.fav ? '<div class="chips" id="favs" style="margin-top:6px"></div>' : ''}`);
+  if (f.t === 'text') return wrap(f.fav
+    ? `<div class="withbtn"><input type="text" ${n} autocomplete="off"><button type="button" id="star" aria-label="Save as favourite">☆</button></div><div class="chips" id="sugg"></div><label>Favourites</label><div class="chips" id="favs"></div><label>Past meals</label><select id="past"><option value="">Past meals…</option></select>`
+    : `<input type="text" ${n} autocomplete="off">`);
   if (f.t === 'area') return wrap(`<textarea ${n} rows="2"></textarea>`);
   if (f.t === 'num') return wrap(`<input type="number" inputmode="numeric" min="0" ${n}>`);
   if (f.t === 'file') return wrap(`<input type="file" accept="image/*" ${n}>`);
@@ -134,7 +144,7 @@ function openForm(kind, row) {
   const form = $('#sheet form');
   form.addEventListener('click', e => {
     const b = e.target.closest('.chips button');
-    if (!b || b.parentElement.id === 'favs') return;
+    if (!b || ['favs', 'sugg'].includes(b.parentElement.id)) return;
     b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
   });
   $('#cancel').onclick = closeSheet;
@@ -161,12 +171,45 @@ function fill(form, c, row) {
 }
 
 async function loadFavs(form) {
-  const {data} = await sb.from('meals').select('description').order('logged_at', {ascending: false}).limit(80);
-  const counts = {};
-  (data || []).forEach(r => counts[r.description] = (counts[r.description] || 0) + 1);
-  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(x => x[0]);
-  $('#favs').innerHTML = top.map(t => `<button type="button" data-t="${esc(t)}">${esc(t)}</button>`).join('');
-  $('#favs').onclick = e => { const b = e.target.closest('button'); if (b) form.description.value = b.dataset.t; };
+  const inp = form.description, star = $('#star'), favsEl = $('#favs'), past = $('#past'), sugg = $('#sugg');
+  let favs = [];
+  const paint = () => {
+    favsEl.innerHTML = favs.map(f => `<button type="button" data-t="${esc(f.name)}">${esc(f.name)}<span data-rm="${f.id}" aria-label="Remove favourite"> ×</span></button>`).join('');
+    const on = favs.some(f => f.name.toLowerCase() === inp.value.trim().toLowerCase());
+    star.textContent = on ? '★' : '☆'; star.classList.toggle('on', on);
+  };
+  const [fv, ml] = await Promise.all([
+    sb.from('favourite_meals').select('id,name').order('name'),
+    sb.from('meals').select('description').order('logged_at', {ascending: false}).limit(150)]);
+  favs = fv.data || [];
+  const seen = [...new Set((ml.data || []).map(r => r.description))].slice(0, 40);
+  const pool = [...new Set([...(ml.data || []).map(r => r.description), ...favs.map(f => f.name)])];
+  past.innerHTML = '<option value="">Past meals…</option>' + seen.map(t => `<option>${esc(t)}</option>`).join('');
+  past.onchange = () => { if (past.value) { inp.value = past.value; past.value = ''; sugg.innerHTML = ''; paint(); } };
+  favsEl.onclick = async e => {
+    const rm = e.target.closest('[data-rm]');
+    if (rm) { await sb.from('favourite_meals').delete().eq('id', rm.dataset.rm); favs = favs.filter(f => f.id !== rm.dataset.rm); return paint(); }
+    const b = e.target.closest('button'); if (b) { inp.value = b.dataset.t; sugg.innerHTML = ''; paint(); }
+  };
+  star.onclick = async () => {
+    const name = inp.value.trim(); if (!name) return;
+    const ex = favs.find(f => f.name.toLowerCase() === name.toLowerCase());
+    if (ex) { await sb.from('favourite_meals').delete().eq('id', ex.id); favs = favs.filter(f => f !== ex); }
+    else {
+      const {data, error} = await sb.from('favourite_meals').insert({user_id: user.id, name}).select().single();
+      if (error) { $('#err').textContent = error.message.includes('favourite_meals') ? 'Run favourites_migration.sql in Supabase first.' : error.message; return; }
+      favs.push(data);
+    }
+    paint();
+  };
+  inp.addEventListener('input', () => {
+    paint();
+    const cur = inp.value.trim().toLowerCase(), q = cur.split(/\s+/).filter(Boolean);
+    const hits = q.length ? pool.filter(t => t.toLowerCase() !== cur && q.every(w => t.toLowerCase().includes(w))).slice(0, 5) : [];
+    sugg.innerHTML = hits.map(t => `<button type="button" data-t="${esc(t)}">${esc(t)}</button>`).join('');
+  });
+  sugg.onclick = e => { const b = e.target.closest('button'); if (b) { inp.value = b.dataset.t; sugg.innerHTML = ''; paint(); } };
+  paint();
 }
 
 async function save(kind, form, id) {
