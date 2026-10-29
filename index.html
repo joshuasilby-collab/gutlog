@@ -414,7 +414,7 @@ async function render() {
     <div class="grid">${Object.keys(K).map(k => `<button data-k="${k}" style="--c:var(${COLORS[k]})">${svg(k)}<span>${K[k].t}</span></button>`).join('')}</div>
     <h2 class="sec">Timeline</h2>
     <div class="tl" id="tl"><div class="empty">Loading…</div></div>
-    <footer><button class="link" id="exp">Export CSV</button><button class="link" id="out">Sign out</button></footer>`;
+    <footer><button class="link" id="exp">Export CSV</button><button class="link" id="out">Sign out</button><span class="link" style="text-decoration:none">v8</span></footer>`;
   $('#tl').innerHTML = (await load()).map(item).join('') || '<div class="empty">Nothing logged yet. Tap a button above.</div>';
 }
 
