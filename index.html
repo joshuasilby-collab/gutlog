@@ -2,16 +2,16 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Gut Log</title>
+<title>Daily</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg">
-<meta name="theme-color" content="#2F6F62">
+<meta name="theme-color" content="#F6F6F3">
 <style>
-:root{--bg:#F4F5F2;--card:#fff;--ink:#17211F;--mute:#6B7774;--line:#E2E6E0;--moss:#2F6F62;--danger:#B23B3E;
---meal:#2F6F62;--bowel:#8A6240;--symptom:#B23B3E;--exercise:#2F6AA0;--sleep:#5E5CA6;--day:#5F6F6B;--r:16px}
-@media(prefers-color-scheme:dark){:root{--bg:#101615;--card:#1A2220;--ink:#E8EEEC;--mute:#92A09C;--line:#2A3532;--moss:#4FA593;--danger:#E0686B;
---meal:#58B5A2;--bowel:#C79A70;--symptom:#E0686B;--exercise:#6FA8DC;--sleep:#9E9CE0;--day:#9AAAA6}
-.chips button.on,.row .go{color:#0B1412}}
+:root{--bg:#F6F6F3;--card:#fff;--ink:#14171A;--mute:#6B7280;--line:#E7E7E2;--moss:#4F46E5;--danger:#DC4A3F;
+--meal:#0E9F6E;--bowel:#7C5CFA;--symptom:#F0654F;--exercise:#F59E0B;--sleep:#3B82F6;--day:#64748B;--r:20px}
+@media(prefers-color-scheme:dark){:root{--bg:#0E1012;--card:#17191C;--ink:#EDEEF0;--mute:#9BA1AA;--line:#25282C;--moss:#8B85FF;--danger:#F27A70;
+--meal:#34D399;--bowel:#A78BFA;--symptom:#FB8F7E;--exercise:#FBBF24;--sleep:#60A5FA;--day:#94A3B8}
+.chips button.on,.row .go,#qgo{color:#0E1012}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 main{max-width:520px;margin:0 auto;padding:18px 16px 40px}
@@ -52,6 +52,21 @@ input[type=checkbox]{accent-color:var(--c,var(--moss));width:20px;height:20px;ve
 #favs:empty::before{content:"Tap the star to save a go-to meal or drink";color:var(--mute);font-size:.9rem}
 #favs button span{opacity:.55;padding-left:4px}
 select{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;font:inherit;background:var(--card);color:var(--ink)}
+.withbtn{align-items:flex-start}
+.withbtn textarea{flex:1;resize:none}
+#star,#qgo{height:52px}
+#qgo{flex:none;padding:0 18px;border:0;border-radius:12px;background:var(--c);color:#fff;font-weight:700}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:8px;margin:12px 0}
+.qgrid button,.qrow button{border:0;border-radius:14px;background:color-mix(in srgb,var(--c) 14%,var(--card));color:var(--c);padding:14px 4px;font-weight:600}
+.qgrid button:active,.qrow button:active{transform:scale(.95)}
+.qgrid b{display:block;font-size:1.5rem}
+.qgrid small{display:block;font-size:.72rem;opacity:.85}
+.qrow{display:flex;align-items:center;gap:8px;margin:10px 0}
+.qrow span{width:76px;text-transform:capitalize;font-weight:600}
+.qrow button{flex:1}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 14px;display:flex;gap:14px;align-items:center;z-index:9;max-width:92vw;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#toast[hidden]{display:none}
+#toast button{background:none;border:0;font-weight:700;color:inherit;padding:4px 6px;text-decoration:underline}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 14px}
 .chips button.on{background:var(--c,var(--moss));border-color:var(--c,var(--moss));color:#fff}
@@ -61,10 +76,24 @@ select{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;f
 .row .danger{color:var(--danger)}
 .err{color:var(--danger);margin-top:10px}
 :focus-visible{outline:3px solid color-mix(in srgb,var(--moss) 50%,transparent);outline-offset:2px}
+.hd{display:flex;justify-content:space-between;align-items:flex-end;margin:6px 0 22px}
+.hd h1{font-size:2rem;letter-spacing:-.03em}
+.hd p{margin:2px 0 0;color:var(--mute)}
+.nav{display:flex;gap:6px}
+.nav button{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:1.3rem;color:var(--mute)}
+.grid{gap:12px}
+.grid button{height:auto;display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px 14px;background:var(--card);border:1px solid var(--line);color:var(--ink);font-weight:600;font-size:.9rem;border-radius:var(--r)}
+.grid button svg{width:40px;height:40px;padding:9px;border-radius:50%;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+.sec{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin:26px 0 10px;font-weight:600}
+.it{box-shadow:none}
+.ico{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+.tt>small:first-child{color:var(--c);font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em}
+footer{display:flex;justify-content:center;gap:12px;margin-top:28px}
 </style></head>
 <body>
 <main id="app"></main>
 <div id="sheet" hidden></div>
+<div id="toast" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 // ====== 1. Paste your project's values (Supabase > Project Settings > API) ======
@@ -83,11 +112,15 @@ const ROWS = {};
 
 // ---- Form definitions: each kind maps to a table and a list of fields ----
 const range = (a, b) => Array.from({length: b - a + 1}, (_, i) => [a + i, String(a + i)]);
+const TAGS = ['Possible garlic/onion', 'Possible gluten', 'Dairy', 'Eaten out', 'Packaged', 'New food'];
+const tagBtns = (on = []) => TAGS.map(t => `<button type="button" data-v="${esc(t)}" class="${on.includes(t) ? 'on' : ''}">${esc(t)}</button>`).join('');
+const qtags = () => [...document.querySelectorAll('#qtags .on')].map(b => b.dataset.v);
 const K = {
   meal: {t: 'Meal', table: 'meals', f: [
     {k:'logged_at', l:'When', t:'dt'},
     {k:'description', l:'What did you eat?', t:'text', req:1, fav:1},
     {k:'photo', l:'Photo (plate or recipe)', t:'file'},
+    {k:'tags', l:'Tags', t:'tags'},
     {k:'notes', l:'Notes', t:'area'}]},
   bowel: {t: 'Bowel', table: 'bowel_movements', f: [
     {k:'logged_at', l:'When', t:'dt'},
@@ -125,10 +158,11 @@ function field(f) {
   if (f.t === 'dt') return wrap(`<input type="datetime-local" ${n} value="${nowLocal()}">`);
   if (f.t === 'date') return wrap(`<input type="date" ${n} value="${day}">`);
   if (f.t === 'text') return wrap(f.fav
-    ? `<div class="withbtn"><input type="text" ${n} autocomplete="off"><button type="button" id="star" aria-label="Save as favourite">☆</button></div><div class="chips" id="sugg"></div><label>Favourites</label><div class="chips" id="favs"></div><label>Past meals</label><select id="past"><option value="">Past meals…</option></select>`
+    ? `<div class="withbtn"><textarea ${n} rows="2" autocomplete="off" enterkeyhint="done"></textarea><button type="button" id="star" aria-label="Save as favourite">☆</button></div><div class="chips" id="sugg"></div><label>Favourites</label><div class="chips" id="favs"></div><label>Past meals</label><select id="past"><option value="">Past meals…</option></select>`
     : `<input type="text" ${n} autocomplete="off">`);
   if (f.t === 'area') return wrap(`<textarea ${n} rows="2"></textarea>`);
   if (f.t === 'num') return wrap(`<input type="number" inputmode="numeric" min="0" ${n}>`);
+  if (f.t === 'tags') return wrap(`<div class="chips tags" data-k="${f.k}">${tagBtns()}</div>`);
   if (f.t === 'file') return wrap(`<input type="file" accept="image/*" ${n}>`);
   if (f.t === 'check') return `<label><input type="checkbox" ${n}> ${f.l}</label>`;
   if (f.t === 'range') return wrap(`<input type="range" min="${f.min}" max="${f.max}" value="${f.def}" ${n} oninput="this.nextElementSibling.textContent=this.value"><b>${f.def}</b>`);
@@ -145,7 +179,8 @@ function openForm(kind, row) {
   form.addEventListener('click', e => {
     const b = e.target.closest('.chips button');
     if (!b || ['favs', 'sugg'].includes(b.parentElement.id)) return;
-    b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    if (b.parentElement.classList.contains('tags')) b.classList.toggle('on');
+    else b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
   });
   $('#cancel').onclick = closeSheet;
   form.onsubmit = e => { e.preventDefault(); save(kind, form, row?.id); };
@@ -165,6 +200,7 @@ function fill(form, c, row) {
     const el = form.elements[f.k] || form.querySelector(`[data-k="${f.k}"]`);
     if (f.t === 'dt') el.value = loc(v);
     else if (f.t === 'check') el.checked = v;
+    else if (f.t === 'tags') el.querySelectorAll('button').forEach(b => b.classList.toggle('on', v.includes(b.dataset.v)));
     else if (f.t === 'chips') el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v == v));
     else { el.value = v; if (f.t === 'range') el.nextElementSibling.textContent = v; }
   }
@@ -202,11 +238,18 @@ async function loadFavs(form) {
     }
     paint();
   };
+  let dt;
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
   inp.addEventListener('input', () => {
-    paint();
-    const cur = inp.value.trim().toLowerCase(), q = cur.split(/\s+/).filter(Boolean);
-    const hits = q.length ? pool.filter(t => t.toLowerCase() !== cur && q.every(w => t.toLowerCase().includes(w))).slice(0, 5) : [];
-    sugg.innerHTML = hits.map(t => `<button type="button" data-t="${esc(t)}">${esc(t)}</button>`).join('');
+    clearTimeout(dt);
+    dt = setTimeout(() => {
+      const cur = inp.value.trim().toLowerCase(), q = cur.split(/\s+/).filter(Boolean);
+      const on = favs.some(f => f.name.toLowerCase() === cur), ch = on ? '★' : '☆';
+      if (star.textContent !== ch) { star.textContent = ch; star.classList.toggle('on', on); }
+      const hits = q.length ? pool.filter(t => t.toLowerCase() !== cur && q.every(w => t.toLowerCase().includes(w))).slice(0, 5) : [];
+      const h = hits.map(t => `<button type="button" data-t="${esc(t)}">${esc(t)}</button>`).join('');
+      if (sugg.dataset.h !== h) { sugg.dataset.h = h; sugg.innerHTML = h; }
+    }, 150);
   });
   sugg.onclick = e => { const b = e.target.closest('button'); if (b) { inp.value = b.dataset.t; sugg.innerHTML = ''; paint(); } };
   paint();
@@ -220,12 +263,13 @@ async function save(kind, form, id) {
     let v = null;
     if (f.t === 'file') { file = el.files[0]; continue; }
     if (f.t === 'dt') v = el.value ? new Date(el.value).toISOString() : null;
+    else if (f.t === 'tags') v = [...el.querySelectorAll('.on')].map(b => b.dataset.v);
     else if (f.t === 'chips') { const b = el.querySelector('.on'); v = b ? (f.s ? b.dataset.v : Number(b.dataset.v)) : null; }
     else if (f.t === 'check') v = el.checked;
     else if (f.t === 'range' || f.t === 'num') v = el.value === '' ? null : Number(el.value);
     else v = el.value.trim() || null;
     if (f.req && v === null) { err.textContent = `${f.l.replace(/\?$/, '')} is required.`; return; }
-    if (v !== null) row[f.k] = v;
+    if (v !== null && !(f.t === 'tags' && !v.length && !id)) row[f.k] = v;
     else if (id && f.k !== 'caffeine_count') row[f.k] = null;
   }
   $('#save').disabled = true;
@@ -246,7 +290,7 @@ async function save(kind, form, id) {
 
 // ---- Summaries (shared by timeline and CSV export) ----
 function summary(kind, r) {
-  if (kind === 'meal') return {title: r.description, detail: [r.notes, r.photo_path && 'photo attached'].filter(Boolean).join(' · ')};
+  if (kind === 'meal') return {title: r.description, detail: [(r.tags || []).join(', '), r.notes, r.photo_path && 'photo attached'].filter(Boolean).join(' · ')};
   if (kind === 'bowel') return {title: `Bristol ${r.bristol}`, detail: [`urgency ${r.urgency}`, r.incomplete && 'incomplete', r.notes].filter(Boolean).join(', ')};
   if (kind === 'symptom') return {title: `${r.type} ${r.severity}/10`, detail: r.notes || ''};
   if (kind === 'exercise') return {title: r.type, detail: `${r.duration_min ?? '?'} min, intensity ${r.intensity ?? '-'}`};
@@ -269,25 +313,102 @@ async function load() {
   return [...tag('sleep', sl), ...tag('day', dc), ...timed];
 }
 
+
+const SEV = [['Mild', 3], ['Moderate', 5], ['Severe', 8]];
+const BRISTOL = [[1, 'Hard lumps'], [2, 'Lumpy'], [3, 'Cracked'], [4, 'Smooth'], [5, 'Soft blobs'], [6, 'Mushy'], [7, 'Watery']];
+const QUICK = ['meal', 'bowel', 'symptom', 'sleep'];
+
+function toast(msg, acts) {
+  const t = $('#toast');
+  t.innerHTML = `<span>${esc(msg)}</span>` + acts.map(([l], i) => `<button data-a="${i}">${l}</button>`).join('');
+  t.hidden = false;
+  t.onclick = e => { const i = e.target.dataset.a; if (i != null) { t.hidden = true; acts[i][1](); } };
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 7000);
+}
+
+async function quickSave(kind, row, label) {
+  const c = K[kind], r = {user_id: user.id, ...row};
+  const q = c.up ? sb.from(c.table).upsert(r, {onConflict: c.up}) : sb.from(c.table).insert(r);
+  const {data, error} = await q.select().single();
+  if (error) { $('#err').textContent = error.message; return; }
+  closeSheet(); day = ymd(new Date()); render();
+  toast(`${label} logged`, [['Details', () => openForm(kind, data)], ['Undo', async () => { await sb.from(c.table).delete().eq('id', data.id); render(); }]]);
+}
+
+function openQuick(kind) {
+  const c = K[kind];
+  let body;
+  if (kind === 'bowel') body = `<div class="qgrid">${BRISTOL.map(([v, l]) => `<button data-q="${v}"><b>${v}</b><small>${l}</small></button>`).join('')}</div>`;
+  else if (kind === 'symptom') body = ['pain', 'bloating', 'gas', 'nausea'].map(t => `<div class="qrow"><span>${t}</span>${SEV.map(([l, v]) => `<button data-q="${t}:${v}">${l}</button>`).join('')}</div>`).join('');
+  else if (kind === 'sleep') body = `<div class="qgrid">${['Poor', 'Meh', 'OK', 'Good', 'Great'].map((l, i) => `<button data-q="${i + 1}"><b>${i + 1}</b><small>${l}</small></button>`).join('')}</div><small>Logs last night. Tap Details afterwards to add times.</small>`;
+  else body = `<div class="withbtn" style="margin-top:12px"><textarea id="qtext" rows="2" placeholder="Type a new meal or drink…" enterkeyhint="done"></textarea><button type="button" id="qgo">Log</button></div><label>Tags (optional, tap before logging)</label><div class="chips tags" id="qtags">${tagBtns()}</div><label>Tap to log instantly</label><div class="chips" id="qchips"></div>`;
+  $('#sheet').hidden = false;
+  $('#sheet').innerHTML = `<div class="panel" style="--c:var(${COLORS[kind]})"><h1>${c.t}</h1>${body}<div class="err" id="err"></div><div class="row"><button id="cancel">Close</button><button id="more">More options</button></div></div>`;
+  $('#cancel').onclick = closeSheet;
+  $('#more').onclick = () => openForm(kind);
+  $('#sheet').onclick = e => {
+    if (e.target.id === 'sheet') return closeSheet();
+    const tg = e.target.closest('#qtags button'); if (tg) return tg.classList.toggle('on');
+    const mealRow = d => { const t = qtags(); return t.length ? {description: d, tags: t} : {description: d}; };
+    if (e.target.id === 'qgo') { const v = $('#qtext').value.trim(); return v ? quickSave('meal', mealRow(v), v) : null; }
+    const b = e.target.closest('[data-q]'); if (!b) return;
+    const v = b.dataset.q;
+    if (kind === 'bowel') quickSave(kind, {bristol: +v}, `Bristol ${v}`);
+    else if (kind === 'symptom') { const [t, n] = v.split(':'); quickSave(kind, {type: t, severity: +n}, `${t} ${n}/10`); }
+    else if (kind === 'sleep') quickSave(kind, {sleep_date: ymd(new Date()), quality: +v}, `Sleep ${v}/5`);
+    else quickSave('meal', mealRow(v), v);
+  };
+  if (kind === 'meal') quickMeal();
+}
+
+async function quickMeal() {
+  const [fv, ml] = await Promise.all([sb.from('favourite_meals').select('name').order('name'), sb.from('meals').select('description').order('logged_at', {ascending: false}).limit(150)]);
+  const favs = (fv.data || []).map(f => f.name);
+  const pool = [...favs.map(n => [n, 1]), ...[...new Set((ml.data || []).map(r => r.description))].filter(d => !favs.includes(d)).map(n => [n, 0])];
+  const box = $('#qchips'), inp = $('#qtext'); let t;
+  const draw = () => {
+    const q = inp.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const h = pool.filter(([n]) => q.every(w => n.toLowerCase().includes(w))).slice(0, 10).map(([n, f]) => `<button type="button" data-q="${esc(n)}">${f ? '★ ' : ''}${esc(n)}</button>`).join('');
+    if (box.dataset.h !== h) { box.dataset.h = h; box.innerHTML = h; }
+  };
+  inp.addEventListener('input', () => { clearTimeout(t); t = setTimeout(draw, 150); });
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#qgo').click(); } });
+  draw();
+}
+
+const ICON = {
+  meal: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-2.5 5-2.5 8H17v10"/>',
+  bowel: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+  symptom: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+  sleep: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  exercise: '<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>',
+  day: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>'
+};
+const svg = k => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
+
 const item = ({kind, r}) => {
   ROWS[r.id] = {kind, r};
   const s = summary(kind, r), t = r.logged_at ? tm(r.logged_at) : '';
-  return `<button class="it" data-edit="${r.id}" style="--c:var(${COLORS[kind]})"><span class="tag">${K[kind].t}</span><span class="tt"><b>${esc(s.title)}</b>${s.detail ? `<small>${esc(s.detail)}</small>` : ''}</span><time>${t}</time></button>`;
+  return `<button class="it" data-edit="${r.id}" style="--c:var(${COLORS[kind]})"><span class="ico">${svg(kind)}</span><span class="tt"><small>${K[kind].t}</small><b>${esc(s.title)}</b>${s.detail ? `<small>${esc(s.detail)}</small>` : ''}</span><time>${t}</time></button>`;
 };
 
 async function render() {
   if (!user) return renderAuth();
-  const label = new Date(day + 'T00:00').toLocaleDateString([], {weekday: 'long', day: 'numeric', month: 'short'});
-  $('#app').innerHTML = `<div class="top"><h1>Gut Log</h1><span><button class="link" id="exp">Export</button><button class="link" id="out">Sign out</button></span></div>
-    <div class="grid">${Object.keys(K).map(k => `<button data-k="${k}" style="--c:var(${COLORS[k]})">${K[k].t}</button>`).join('')}</div>
-    <div class="date"><button id="prev" aria-label="Previous day">‹</button><b>${label}</b><button id="next" aria-label="Next day">›</button></div>
-    <div class="tl" id="tl"><div class="empty">Loading…</div></div>`;
-  $('#tl').innerHTML = (await load()).map(item).join('') || '<div class="empty">Nothing logged yet. Tap a button above to add an entry.</div>';
+  const d = new Date(day + 'T00:00'), today = day === ymd(new Date());
+  const sub = d.toLocaleDateString([], {weekday: 'long', day: 'numeric', month: 'long'});
+  $('#app').innerHTML = `<header class="hd"><div><h1>${today ? 'Today' : d.toLocaleDateString([], {weekday: 'long'})}</h1><p>${sub}</p></div>
+    <div class="nav"><button id="prev" aria-label="Previous day">‹</button><button id="next" aria-label="Next day">›</button></div></header>
+    <div class="grid">${Object.keys(K).map(k => `<button data-k="${k}" style="--c:var(${COLORS[k]})">${svg(k)}<span>${K[k].t}</span></button>`).join('')}</div>
+    <h2 class="sec">Timeline</h2>
+    <div class="tl" id="tl"><div class="empty">Loading…</div></div>
+    <footer><button class="link" id="exp">Export CSV</button><button class="link" id="out">Sign out</button></footer>`;
+  $('#tl').innerHTML = (await load()).map(item).join('') || '<div class="empty">Nothing logged yet. Tap a button above.</div>';
 }
 
 document.addEventListener('click', async e => {
   const t = e.target;
-  if (t.matches('.grid button')) openForm(t.dataset.k);
+  const gb = t.closest('.grid button');
+  if (gb) (QUICK.includes(gb.dataset.k) ? openQuick : openForm)(gb.dataset.k);
   else if (t.id === 'prev' || t.id === 'next') { const d = new Date(day + 'T00:00'); d.setDate(d.getDate() + (t.id === 'next' ? 1 : -1)); day = ymd(d); render(); }
   else if (t.id === 'out') sb.auth.signOut();
   else if (t.id === 'exp') exportCsv();
@@ -304,11 +425,11 @@ async function exportCsv() {
   const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
-  a.download = `gut-log-${ymd(new Date())}.csv`; a.click();
+  a.download = `daily-${ymd(new Date())}.csv`; a.click();
 }
 
 function renderAuth() {
-  $('#app').innerHTML = `<h1>Gut Log</h1><form id="auth"><label>Email</label><input type="email" name="e" required autocomplete="email">
+  $('#app').innerHTML = `<h1>Daily</h1><form id="auth"><label>Email</label><input type="email" name="e" required autocomplete="email">
     <label>Password</label><input type="password" name="p" required minlength="6" autocomplete="current-password">
     <div class="err" id="aerr"></div><div class="row"><button class="go" data-m="in">Sign in</button><button data-m="up">Create account</button></div></form>`;
   $('#auth').onsubmit = async e => {
@@ -320,7 +441,11 @@ function renderAuth() {
   };
 }
 
-sb.auth.onAuthStateChange((_ev, session) => { user = session?.user ?? null; render(); });
+sb.auth.onAuthStateChange((_ev, session) => {
+  user = session?.user ?? null; render();
+  const h = location.hash.slice(1);
+  if (user && QUICK.includes(h)) { history.replaceState(null, '', location.pathname); openQuick(h); }
+});
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
 </body></html>
