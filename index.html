@@ -47,14 +47,14 @@ input[type=checkbox]{accent-color:var(--c,var(--moss));width:20px;height:20px;ve
 .withbtn{display:flex;gap:8px}
 #sugg:not(:empty){margin-top:8px}
 #sugg button{border-style:dashed}
-#star{flex:none;width:52px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:1.4rem;color:var(--mute)}
-#star.on{color:var(--c)}
+#star,#qstar{flex:none;width:52px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:1.4rem;color:var(--mute)}
+#star.on,#qstar.on{color:var(--c)}
 #favs:empty::before{content:"Tap the star to save a go-to meal or drink";color:var(--mute);font-size:.9rem}
 #favs button span{opacity:.55;padding-left:4px}
 select{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;font:inherit;background:var(--card);color:var(--ink)}
 .withbtn{align-items:flex-start}
 .withbtn textarea{flex:1;resize:none}
-#star,#qgo{height:52px}
+#star,#qstar,#qgo{height:52px}
 #qgo{flex:none;padding:0 18px;border:0;border-radius:12px;background:var(--c);color:#fff;font-weight:700}
 .qgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:8px;margin:12px 0}
 .qgrid button,.qrow button{border:0;border-radius:14px;background:color-mix(in srgb,var(--c) 14%,var(--card));color:var(--c);padding:14px 4px;font-weight:600}
@@ -326,13 +326,21 @@ function toast(msg, acts) {
   clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 7000);
 }
 
+async function addFav(name) {
+  const {error} = await sb.from('favourite_meals').insert({user_id: user.id, name});
+  if (error && !/duplicate|unique/i.test(error.message)) return error.message.includes('favourite_meals') ? 'Run favourites_migration.sql in Supabase first.' : error.message;
+  return null;
+}
+
 async function quickSave(kind, row, label) {
   const c = K[kind], r = {user_id: user.id, ...row};
   const q = c.up ? sb.from(c.table).upsert(r, {onConflict: c.up}) : sb.from(c.table).insert(r);
   const {data, error} = await q.select().single();
   if (error) { $('#err').textContent = error.message; return; }
   closeSheet(); day = ymd(new Date()); render();
-  toast(`${label} logged`, [['Details', () => openForm(kind, data)], ['Undo', async () => { await sb.from(c.table).delete().eq('id', data.id); render(); }]]);
+  const acts = [['Details', () => openForm(kind, data)], ['Undo', async () => { await sb.from(c.table).delete().eq('id', data.id); render(); }]];
+  if (kind === 'meal') acts.splice(1, 0, ['★ Favourite', async () => toast((await addFav(data.description)) || 'Saved to favourites', [])]);
+  toast(`${label} logged`, acts);
 }
 
 function openQuick(kind) {
@@ -341,7 +349,7 @@ function openQuick(kind) {
   if (kind === 'bowel') body = `<div class="qgrid">${BRISTOL.map(([v, l]) => `<button data-q="${v}"><b>${v}</b><small>${l}</small></button>`).join('')}</div>`;
   else if (kind === 'symptom') body = ['pain', 'bloating', 'gas', 'nausea'].map(t => `<div class="qrow"><span>${t}</span>${SEV.map(([l, v]) => `<button data-q="${t}:${v}">${l}</button>`).join('')}</div>`).join('');
   else if (kind === 'sleep') body = `<div class="qgrid">${['Poor', 'Meh', 'OK', 'Good', 'Great'].map((l, i) => `<button data-q="${i + 1}"><b>${i + 1}</b><small>${l}</small></button>`).join('')}</div><small>Logs last night. Tap Details afterwards to add times.</small>`;
-  else body = `<div class="withbtn" style="margin-top:12px"><textarea id="qtext" rows="2" placeholder="Type a new meal or drink…" enterkeyhint="done"></textarea><button type="button" id="qgo">Log</button></div><label>Tags (optional, tap before logging)</label><div class="chips tags" id="qtags">${tagBtns()}</div><label>Tap to log instantly</label><div class="chips" id="qchips"></div>`;
+  else body = `<div class="withbtn" style="margin-top:12px"><textarea id="qtext" rows="2" placeholder="Type a new meal or drink…" enterkeyhint="done"></textarea><button type="button" id="qstar" aria-label="Save as favourite">☆</button><button type="button" id="qgo">Log</button></div><label>Tags (optional, tap before logging)</label><div class="chips tags" id="qtags">${tagBtns()}</div><label>Tap to log instantly</label><div class="chips" id="qchips"></div>`;
   $('#sheet').hidden = false;
   $('#sheet').innerHTML = `<div class="panel" style="--c:var(${COLORS[kind]})"><h1>${c.t}</h1>${body}<div class="err" id="err"></div><div class="row"><button id="cancel">Close</button><button id="more">More options</button></div></div>`;
   $('#cancel').onclick = closeSheet;
@@ -349,6 +357,11 @@ function openQuick(kind) {
   $('#sheet').onclick = e => {
     if (e.target.id === 'sheet') return closeSheet();
     const tg = e.target.closest('#qtags button'); if (tg) return tg.classList.toggle('on');
+    if (e.target.id === 'qstar') {
+      const v = $('#qtext').value.trim(), b = e.target; if (!v) return;
+      addFav(v).then(m => { if (m) { $('#err').textContent = m; return; } b.textContent = '★'; b.classList.add('on'); $('#qchips').insertAdjacentHTML('afterbegin', `<button type="button" data-q="${esc(v)}">★ ${esc(v)}</button>`); });
+      return;
+    }
     const mealRow = d => { const t = qtags(); return t.length ? {description: d, tags: t} : {description: d}; };
     if (e.target.id === 'qgo') { const v = $('#qtext').value.trim(); return v ? quickSave('meal', mealRow(v), v) : null; }
     const b = e.target.closest('[data-q]'); if (!b) return;
